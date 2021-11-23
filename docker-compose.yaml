@@ -1,0 +1,38 @@
+version: '3.7'
+
+services:
+  neo4j:
+    container_name: peliculas__neo4j
+    image: neo4j
+    environment:
+      - NEO4J_AUTH=neo4j/peliculas
+    restart: always
+
+  server:
+    container_name: peliculas__server
+    build: .
+    command: python run.py
+    stdin_open: true
+    tty: true
+    environment:
+      - DATABASE_USER=neo4j
+      - DATABASE_PASSWORD=peliculas
+      - DATABASE_HOST=neo4j
+      - DATABASE_PORT=7687
+      - APP_MODE=development
+      - SERVER_HOST=0.0.0.0
+      - SERVER_PORT=5555
+      - PYTHONPATH=$PYTHONPATH:/server
+      - JWT_SECRET_KEY=somethingcoolhere
+      - FLASK_APP=run:create_app()
+      - FLASK_DEBUG=1
+    volumes:
+      - ./server:/server
+    ports:
+      - 5555:5555
+    depends_on:
+      - neo4j
+    restart: always
+
+volumes:
+  neo4j-data:
