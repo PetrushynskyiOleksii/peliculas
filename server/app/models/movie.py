@@ -10,17 +10,29 @@ from app.exceptions import DatabaseError
 CREATE_LIKED_RELATIONSHIP = """
     MERGE (user:User {external_id: $user_external_id})
     MERGE (movie:Movie {external_id: $movie_external_id})
-    MERGE (user)-[liked_rel:LIKED]->(movie)
-    ON CREATE SET liked_rel.at = timestamp()
+    MERGE (user)-[liked:LIKED]->(movie)
+    ON CREATE SET liked.at = timestamp()
     RETURN user.external_id as user_id, 
-        liked_rel.at as liked_timestamp, 
+        liked.at as liked_timestamp, 
         movie.external_id as movie_id
 """
 
 DELETE_LIKED_RELATIONSHIP = """
-    MATCH (user:User)-[liked_rel:LIKED]->(movie:Movie)
+    MATCH (user:User)-[liked:LIKED]->(movie:Movie)
     WHERE user.external_id=$user_external_id AND movie.external_id=$movie_external_id
-    DELETE liked_rel
+    DELETE liked
+"""
+GET_COLLABORATIVE_RECOMMENDATIONS = """
+    CALL {
+        MATCH (user:User {external_id: $user_external_id})-[liked:LIKED]->(recent_liked:Movie)
+        RETURN user, recent_liked ORDER BY liked.timestamp DESC LIMIT 10
+    }
+    MATCH (recent_liked)<-[:LIKED]-(similar_user:User)-[:LIKED]->(recommended_movies:Movie)
+    WHERE NOT (user)-[:LIKED]->(recommended_movies)
+    WITH SIZE(COLLECT(DISTINCT similar_user)) as similar_user_count, recommended_movies
+    RETURN recommended_movies.external_id as movie_external_id
+    ORDER BY similar_user_count DESC
+    LIMIT $limit
 """
 
 
@@ -66,3 +78,23 @@ class Movie:
                 user_id, movie_id, err
             )
             raise DatabaseError("Failed to delete liked relationship")
+
+    @classmethod
+    def get_collaborative_recommendations(cls, user_id, limit):
+        """Get movies recommendations based on collaborative filtering."""
+        try:
+            with cls.driver.session() as session:
+                result = session.run(
+                    GET_COLLABORATIVE_RECOMMENDATIONS,
+                    user_external_id=user_id,
+                    limit=limit
+                )
+                recommended_movies = result.data()
+                recommended_movies_ids = [movie["movie_external_id"] for movie in recommended_movies]
+                return recommended_movies_ids
+        except exceptions.Neo4jError as err:
+            LOGGER.error(
+                "Failed to get collaborative recommendations for user=%s. Error: %s",
+                user_id, err
+            )
+            raise DatabaseError("Failed to get collaborative recommendations")

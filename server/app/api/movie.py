@@ -47,6 +47,24 @@ def handle_movie_dislike(movie_id):
     return make_response(success=True, http_status=HTTPStatus.NO_CONTENT)
 
 
+@movie_blueprint.route("/recommendations/likes", methods=("GET", ))
+@auth_required
+def handle_collaborative_recommendations():
+    """Return list of similar movies to provided movie_id."""
+    limit = request.args.get("limit", type=int, default=10)
+
+    try:
+        movies = Movie.get_collaborative_recommendations(g.user_id, limit=limit)
+    except DatabaseError as err:
+        return make_response(
+            success=False,
+            message=str(err),
+            http_status=HTTPStatus.BAD_REQUEST
+        )
+
+    return make_response(success=True, data=movies, http_status=HTTPStatus.OK)
+
+
 @movie_blueprint.route("/movie/<movie_id>/similar", methods=("GET", ))
 def handle_movie_similar(movie_id):
     """Return list of similar movies to provided movie_id."""
