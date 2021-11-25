@@ -6,9 +6,14 @@ services:
     image: neo4j
     environment:
       - NEO4J_AUTH=neo4j/peliculas
+      - NEO4J_apoc_export_file_enabled=true
+      - NEO4J_apoc_import_file_enabled=true
+      - NEO4J_apoc_import_file_use__neo4j__config=true
+      - NEO4JLABS_PLUGINS=["apoc"]
     restart: always
     volumes:
       - neo4j-data:/data
+      - neo4j-plugins:/plugins
     ports:
       - 7474:7474
       - 7687:7687
@@ -41,3 +46,4 @@ services:
 
 volumes:
   neo4j-data:
+  neo4j-plugins:
