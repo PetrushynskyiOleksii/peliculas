@@ -3,12 +3,15 @@ version: '3.7'
 services:
   neo4j:
     container_name: peliculas__neo4j
-    image: neo4j
+    build: neo4j
     environment:
       - NEO4J_AUTH=neo4j/peliculas
       - NEO4J_apoc_export_file_enabled=true
       - NEO4J_apoc_import_file_enabled=true
       - NEO4J_apoc_import_file_use__neo4j__config=true
+      - NEO4J_dbms_memory_pagecache_size=4G
+      - NEO4J_dbms_memory_heap_max__size=3G
+      - NEO4J_dbms_memory_heap_initial__size=2G
       - NEO4JLABS_PLUGINS=["apoc"]
     restart: always
     volumes:
