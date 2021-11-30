@@ -5,15 +5,16 @@ import logging
 from neo4j import exceptions
 
 from app import NEO4J_DRIVER
-from app.exceptions import DatabaseError
+from app.exceptions import DatabaseError, DBNoResultFoundError
 
 CREATE_LIKED_RELATIONSHIP = """
+    MATCH (movie:Movie {external_id: $movie_external_id})
+    WITH movie
     MERGE (user:User {external_id: $user_external_id})
-    MERGE (movie:Movie {external_id: $movie_external_id})
     MERGE (user)-[liked:LIKED]->(movie)
     ON CREATE SET liked.at = timestamp()
-    RETURN user.external_id as user_id, 
-        liked.at as liked_timestamp, 
+    RETURN user.external_id as user_id,
+        liked.at as liked_timestamp,
         movie.external_id as movie_id
 """
 
@@ -53,14 +54,18 @@ class Movie:
                     CREATE_LIKED_RELATIONSHIP,
                     user_external_id=user_id,
                     movie_external_id=movie_id
-                )
-                return result.data()
+                ).data()
         except exceptions.Neo4jError as err:
             LOGGER.error(
                 "Failed to create liked relationship between user=%s and movie=%s. Error: %s",
                 user_id, movie_id, err
             )
             raise DatabaseError("Failed to create liked relationship")
+
+        if not result:
+            raise DBNoResultFoundError(f"The movie does not exist: external_id={movie_id}")
+
+        return result
 
     @classmethod
     def delete_liked_relationship(cls, user_id, movie_id):

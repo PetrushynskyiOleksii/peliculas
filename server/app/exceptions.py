@@ -22,5 +22,9 @@ class DatabaseError(BaseError):
     """Class that represents errors caused on interaction with database."""
 
 
+class DBNoResultFoundError(DatabaseError):
+    """Class that represents errors caused on not existing entity."""
+
+
 class TokenError(BaseError):
     """Class that represents errors caused on interaction with auth token."""

@@ -1,12 +1,10 @@
 """This module provides user views."""
 
-from datetime import datetime, timedelta
 from http import HTTPStatus
 
 from flask import Blueprint, request, g
 
-from app import constants
-from app.exceptions import DatabaseError
+from app.exceptions import DatabaseError, DBNoResultFoundError
 from app.models.movie import Movie
 from app.utils.auth import auth_required
 from app.utils.response import make_response
@@ -21,7 +19,7 @@ def handle_movie_like(movie_id):
     """Create like for provided movie and user."""
     try:
         result = Movie.create_liked_relationship(g.user_id, movie_id)
-    except DatabaseError as err:
+    except (DatabaseError, DBNoResultFoundError) as err:
         return make_response(
             success=False,
             message=str(err),
