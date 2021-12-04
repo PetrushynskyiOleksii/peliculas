@@ -7,6 +7,29 @@ from neo4j import exceptions
 from app import NEO4J_DRIVER
 from app.exceptions import DatabaseError, DBNoResultFoundError
 
+
+GET_SIMILAR_MOVIES = """
+MATCH (movie:Movie {external_id: $movie_external_id})
+    -[:ACTED_IN|WROTE|DIRECTED|PRODUCED|IN_GENRE|IN_COUNTRY]-(relationships)
+    -[:ACTED_IN|WROTE|DIRECTED|PRODUCED|IN_GENRE|IN_COUNTRY]-(recommendations)
+WITH recommendations, collect(relationships) AS relationships
+
+RETURN recommendations.external_id as movie_external_id, REDUCE (
+    score = 0,
+    relationship IN relationships |
+    score + CASE
+                WHEN 'Country' in labels(relationship) THEN 1
+                WHEN 'Actor' in labels(relationship) THEN 1.5
+                WHEN 'Writer' in labels(relationship) THEN 2
+                WHEN 'Director' in labels(relationship) THEN 2
+                WHEN 'ProductionCompany' in labels(relationship) THEN 2
+                WHEN 'Genre' in labels(relationship) THEN 3
+            END
+) as score
+ORDER BY score DESC
+LIMIT $limit
+"""
+
 CREATE_LIKED_RELATIONSHIP = """
     MATCH (movie:Movie {external_id: $movie_external_id})
     WITH movie
@@ -103,3 +126,23 @@ class Movie:
                 user_id, err
             )
             raise DatabaseError("Failed to get collaborative recommendations")
+
+    @classmethod
+    def get_similar_movies(cls, movie_id, limit):
+        """Get similar movies to provided movie external id."""
+        try:
+            with cls.driver.session() as session:
+                result = session.run(
+                    GET_SIMILAR_MOVIES,
+                    movie_external_id=movie_id,
+                    limit=limit
+                )
+                similar_movies = result.data()
+                similar_movies_ids = [movie["movie_external_id"] for movie in similar_movies]
+                return similar_movies_ids
+        except exceptions.Neo4jError as err:
+            LOGGER.error(
+                "Failed to get similar movies for external_id=%s. Error: %s",
+                movie_id, err
+            )
+            raise DatabaseError("Failed to get similar movies")

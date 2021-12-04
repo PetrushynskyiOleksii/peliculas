@@ -66,6 +66,18 @@ def handle_collaborative_recommendations():
 @movie_blueprint.route("/movie/<movie_id>/similar", methods=("GET", ))
 def handle_movie_similar(movie_id):
     """Return list of similar movies to provided movie_id."""
+    limit = request.args.get("limit", type=int, default=10)
+
+    try:
+        movies = Movie.get_similar_movies(movie_id, limit=limit)
+    except DatabaseError as err:
+        return make_response(
+            success=False,
+            message=str(err),
+            http_status=HTTPStatus.BAD_REQUEST
+        )
+
+    return make_response(success=True, data=movies, http_status=HTTPStatus.OK)
 
 
 @movie_blueprint.route("/movies/most_rated", methods=("GET", ))
