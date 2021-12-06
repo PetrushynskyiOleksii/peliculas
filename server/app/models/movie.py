@@ -9,25 +9,52 @@ from app.exceptions import DatabaseError, DBNoResultFoundError
 
 
 GET_SIMILAR_MOVIES = """
-MATCH (movie:Movie {external_id: $movie_external_id})
-    -[:ACTED_IN|WROTE|DIRECTED|PRODUCED|IN_GENRE|IN_COUNTRY]-(relationships)
-    -[:ACTED_IN|WROTE|DIRECTED|PRODUCED|IN_GENRE|IN_COUNTRY]-(recommendations)
-WITH recommendations, collect(relationships) AS relationships
+    MATCH (movie:Movie {external_id: $movie_external_id})
+        -[:ACTED_IN|WROTE|DIRECTED|PRODUCED|IN_GENRE|IN_COUNTRY]-(relationships)
+        -[:ACTED_IN|WROTE|DIRECTED|PRODUCED|IN_GENRE|IN_COUNTRY]-(recommendations)
+    WITH recommendations, collect(relationships) AS relationships
+    
+    RETURN recommendations.external_id as movie_external_id, REDUCE (
+        score = 0,
+        relationship IN relationships |
+        score + CASE
+                    WHEN 'Country' in labels(relationship) THEN 1
+                    WHEN 'Actor' in labels(relationship) THEN 1.5
+                    WHEN 'Writer' in labels(relationship) THEN 2
+                    WHEN 'Director' in labels(relationship) THEN 2
+                    WHEN 'ProductionCompany' in labels(relationship) THEN 2
+                    WHEN 'Genre' in labels(relationship) THEN 3
+                END
+    ) as score
+    ORDER BY score DESC
+    LIMIT $limit
+"""
 
-RETURN recommendations.external_id as movie_external_id, REDUCE (
-    score = 0,
-    relationship IN relationships |
-    score + CASE
-                WHEN 'Country' in labels(relationship) THEN 1
-                WHEN 'Actor' in labels(relationship) THEN 1.5
-                WHEN 'Writer' in labels(relationship) THEN 2
-                WHEN 'Director' in labels(relationship) THEN 2
-                WHEN 'ProductionCompany' in labels(relationship) THEN 2
-                WHEN 'Genre' in labels(relationship) THEN 3
-            END
-) as score
-ORDER BY score DESC
-LIMIT $limit
+GET_CONTENT_BASED_RECOMMENDATIONS = """
+    CALL {
+        MATCH (user:User {external_id: $user_external_id})-[liked:LIKED]->(recent_liked:Movie)
+        RETURN user, recent_liked ORDER BY liked.timestamp DESC LIMIT 10
+    }
+    MATCH (recent_liked)
+        -[:ACTED_IN|WROTE|DIRECTED|PRODUCED|IN_GENRE|IN_COUNTRY]-(relationships)
+        -[:ACTED_IN|WROTE|DIRECTED|PRODUCED|IN_GENRE|IN_COUNTRY]-(recommendations)
+    WHERE NOT (user)-[:LIKED]->(recommendations)
+    WITH recommendations, collect(relationships) AS relationships
+    
+    RETURN recommendations.external_id as movie_external_id, REDUCE (
+        score = 0,
+        relationship IN relationships |
+        score + CASE
+                    WHEN 'Country' in labels(relationship) THEN 1
+                    WHEN 'Actor' in labels(relationship) THEN 1.5
+                    WHEN 'Writer' in labels(relationship) THEN 2
+                    WHEN 'Director' in labels(relationship) THEN 2
+                    WHEN 'ProductionCompany' in labels(relationship) THEN 2
+                    WHEN 'Genre' in labels(relationship) THEN 3
+                END
+    ) as score
+    ORDER BY score DESC
+    LIMIT $limit
 """
 
 CREATE_LIKED_RELATIONSHIP = """
@@ -126,6 +153,26 @@ class Movie:
                 user_id, err
             )
             raise DatabaseError("Failed to get collaborative recommendations")
+
+    @classmethod
+    def get_content_based_recommendations(cls, user_id, limit):
+        """Get content-based movies recommendations."""
+        try:
+            with cls.driver.session() as session:
+                result = session.run(
+                    GET_CONTENT_BASED_RECOMMENDATIONS,
+                    user_external_id=user_id,
+                    limit=limit
+                )
+                recommended_movies = result.data()
+                recommended_movies_ids = [movie["movie_external_id"] for movie in recommended_movies]
+                return recommended_movies_ids
+        except exceptions.Neo4jError as err:
+            LOGGER.error(
+                "Failed to get content-based recommendations for user=%s. Error: %s",
+                user_id, err
+            )
+            raise DatabaseError("Failed to get content-based recommendations")
 
     @classmethod
     def get_similar_movies(cls, movie_id, limit):
