@@ -20,6 +20,11 @@ GET_MOVIE = """
         collect(distinct countries.name) as countries
 """
 
+GET_USER_LIKED_MOVIES = """
+    MATCH (user:User {external_id: "user-5"})-[:LIKED]->(movie:Movie) 
+    RETURN user.external_id as external_id, COLLECT(movie{.external_id, .title}) as liked_movies
+"""
+
 GET_SIMILAR_MOVIES = """
     MATCH (movie:Movie {external_id: $movie_external_id})
         -[:ACTED_IN|WROTE|DIRECTED|PRODUCED|IN_GENRE|IN_COUNTRY]-(relationships)
@@ -91,6 +96,7 @@ DELETE_LIKED_RELATIONSHIP = """
     WHERE user.external_id=$user_external_id AND movie.external_id=$movie_external_id
     DELETE liked
 """
+
 GET_COLLABORATIVE_RECOMMENDATIONS = """
     CALL {
         MATCH (user:User {external_id: $user_external_id})-[liked:LIKED]->(recent_liked:Movie)

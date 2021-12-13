@@ -13,6 +13,22 @@ from app.utils.response import make_response
 movies_blueprint = Blueprint("pl-movies", __name__)
 
 
+@movies_blueprint.route("user/movies", methods=("GET", ))
+@auth_required
+def handle_user_liked_movies():
+    """Return movies liked by user."""
+    try:
+        liked_movies = Movie.get_user_liked_movies(g.user_id)
+    except DatabaseError as err:
+        return make_response(
+            success=False,
+            message=str(err),
+            http_status=HTTPStatus.BAD_REQUEST
+        )
+
+    return make_response(success=True, data=liked_movies, http_status=HTTPStatus.OK)
+
+
 @movies_blueprint.route("/movies", methods=("GET", ))
 def handle_movies_search():
     """Return results from elastic search by provided query."""

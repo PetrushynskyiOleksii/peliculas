@@ -11,6 +11,7 @@ from app.exceptions import DatabaseError, DBNoResultFoundError
 from app.utils.cypher_queries import (
     GET_MOVIE,
     GET_SIMILAR_MOVIES,
+    GET_USER_LIKED_MOVIES,
     GET_CONTENT_BASED_RECOMMENDATIONS,
     GET_COLLABORATIVE_RECOMMENDATIONS,
     CREATE_LIKED_RELATIONSHIP,
@@ -139,6 +140,22 @@ class Movie:
                 movie_id, err
             )
             raise DatabaseError("Failed to get movie by external id")
+
+    @classmethod
+    def get_user_liked_movies(cls, user_id):
+        """Get liked movies for provided user."""
+        try:
+            with cls.neo4j_driver.session() as session:
+                return session.run(
+                    GET_USER_LIKED_MOVIES,
+                    user_external_id=user_id,
+                ).single().data()
+        except exceptions.Neo4jError as err:
+            LOGGER.error(
+                "Failed to get liked movies for user=%s. Error: %s",
+                user_id, err
+            )
+            raise DatabaseError("Failed to get user liked movies")
 
     @classmethod
     def search_movies(cls, query, limit):
