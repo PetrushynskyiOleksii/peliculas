@@ -1,0 +1,3 @@
+FROM neo4j:latest
+
+COPY data/imdb.csv data/imdb.cypher /var/lib/neo4j/import/

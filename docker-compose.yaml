@@ -1,9 +1,24 @@
 version: '3.7'
 
 services:
+  elasticsearch:
+    container_name: peliculas_es
+    image: elasticsearch:7.14.2
+    environment:
+      - "discovery.type=single-node"
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - ELASTIC_PASSWORD=peliculas
+      - ELASTIC_USERNAME=peliculas
+    ports:
+      - 9200:9200
+      - 9300:9300
+    restart: always
+
   neo4j:
     container_name: peliculas__neo4j
-    build: neo4j
+    build:
+      context: .
+      dockerfile: Dockerfile.neo4j
     environment:
       - NEO4J_AUTH=neo4j/peliculas
       - NEO4J_apoc_export_file_enabled=true
@@ -32,6 +47,10 @@ services:
       - DATABASE_PASSWORD=peliculas
       - DATABASE_HOST=neo4j
       - DATABASE_PORT=7687
+      - ES_DATABASE_USER=peliculas
+      - ES_DATABASE_PASSWORD=peliculas
+      - ES_DATABASE_HOST=elasticsearch
+      - ES_DATABASE_PORT=9200
       - APP_MODE=development
       - SERVER_HOST=0.0.0.0
       - SERVER_PORT=5555
@@ -45,6 +64,7 @@ services:
       - 5555:5555
     depends_on:
       - neo4j
+      - elasticsearch
     restart: always
 
 volumes:

@@ -15,6 +15,12 @@ class BaseConfig:
     DATABASE_PASSWORD = os.getenv("DATABASE_PASSWORD", "peliculas")
     DATABASE_URI = f"neo4j://{DATABASE_HOST}:{DATABASE_PORT}"
 
+    # ElasticSearch
+    ES_DATABASE_HOST = os.getenv("ES_DATABASE_HOST", "localhost")
+    ES_DATABASE_PORT = os.getenv("ES_DATABASE_PORT", 9200)
+    ES_DATABASE_USER = os.getenv("ES_DATABASE_USER", "peliculas")
+    ES_DATABASE_PASS = os.getenv("ES_DATABASE_PASS", "peliculas")
+
     # JWT
     JWT_SECRET_KEY = os.environ["JWT_SECRET_KEY"]
     JWT_ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
