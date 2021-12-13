@@ -43,10 +43,10 @@ services:
     stdin_open: true
     tty: true
     environment:
-      - DATABASE_USER=neo4j
-      - DATABASE_PASSWORD=peliculas
-      - DATABASE_HOST=neo4j
-      - DATABASE_PORT=7687
+      - NEO4J_DATABASE_USER=neo4j
+      - NEO4J_DATABASE_PASSWORD=peliculas
+      - NEO4J_DATABASE_HOST=neo4j
+      - NEO4J_DATABASE_PORT=7687
       - ES_DATABASE_USER=peliculas
       - ES_DATABASE_PASSWORD=peliculas
       - ES_DATABASE_HOST=elasticsearch

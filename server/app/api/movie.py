@@ -1,4 +1,4 @@
-"""This module provides user views."""
+"""This module provides movies views."""
 
 from http import HTTPStatus
 
@@ -96,8 +96,3 @@ def handle_movie_similar(movie_id):
         )
 
     return make_response(success=True, data=movies, http_status=HTTPStatus.OK)
-
-
-@movie_blueprint.route("/movies/most_rated", methods=("GET", ))
-def handle_movie_most_rated(movie_id):
-    """Create like for provided movie and user."""

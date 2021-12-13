@@ -23,7 +23,6 @@ ES_EXTERNAL_ID_FIELD = "external_id"
 ES_TITLE_FIELD = "title"
 ES_ORIGINAL_TITLE_FIELD = "original_title"
 ES_DESCRIPTION_FIELD = "description"
-ES_STUFF_FIELD = "stuff"
 
 MOVIE_INDEX_NAME = "movie-index"
 
@@ -75,6 +74,7 @@ def es_create_stuff_index():
             "properties": {
                 "external_id": {"type": "keyword"},
                 "title": {"type": "text", "analyzer": "simple"},
+                "original_title": {"type": "keyword"},
                 "description": {"type": "text", "analyzer": "description_analyzer"},
             }
         }
@@ -114,6 +114,7 @@ def es_insert_movies():
                 ES_EXTERNAL_ID_FIELD: external_id,
                 ES_TITLE_FIELD: title,
                 ES_DESCRIPTION_FIELD: description,
+                ES_ORIGINAL_TITLE_FIELD: title,
             })
             es_docs_count += 1
 

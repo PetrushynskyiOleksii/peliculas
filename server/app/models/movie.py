@@ -3,8 +3,9 @@
 import logging
 
 from neo4j import exceptions
+from elasticsearch import ElasticsearchException
 
-from app import NEO4J_DRIVER
+from app import NEO4J_DRIVER, ES_DRIVER, APP_CONFIG
 from app.exceptions import DatabaseError, DBNoResultFoundError
 
 
@@ -193,3 +194,28 @@ class Movie:
                 movie_id, err
             )
             raise DatabaseError("Failed to get similar movies")
+
+    @classmethod
+    def search_movies(cls, query, limit):
+        """Get movies from elastic search by provided query."""
+        query = {
+            "query": {
+                "multi_match": {
+                    "query": query,
+                    "fields": ("title", "description")
+                }
+            },
+            "_source": ["external_id", "original_title"]
+        }
+
+        try:
+            result = ES_DRIVER.search(body=query, index=APP_CONFIG.ES_DATABASE_MOVIE_INDEX, size=limit)
+            movies = [movie["_source"] for movie in result["hits"]["hits"]]
+        except ElasticsearchException as err:
+            LOGGER.error(
+                "Failed to search movies by query=%s from es. Error: %s",
+                query, err
+            )
+            raise DatabaseError("Failed to search movies by query")
+
+        return movies
