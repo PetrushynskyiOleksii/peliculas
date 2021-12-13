@@ -7,8 +7,7 @@ from flask_cors import CORS
 from flask_swagger_ui import get_swaggerui_blueprint
 
 from app import APP_CONFIG
-from app.api.movie import movie_blueprint
-from app.api.search import search_blueprint
+from app.api.movie import movies_blueprint
 from app.api.index import (
     internal_blueprint,
     handle_404,
@@ -27,8 +26,7 @@ def create_app():
     app.register_blueprint(swagger_blueprint, url_prefix="/api/v1/docs")
 
     app.register_blueprint(internal_blueprint, url_prefix="/api/v1")
-    app.register_blueprint(movie_blueprint, url_prefix="/api/v1")
-    app.register_blueprint(search_blueprint, url_prefix="/api/v1")
+    app.register_blueprint(movies_blueprint, url_prefix="/api/v1")
 
     app.register_error_handler(HTTPStatus.NOT_FOUND, handle_404)
     app.register_error_handler(HTTPStatus.METHOD_NOT_ALLOWED, handle_405)

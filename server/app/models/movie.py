@@ -5,88 +5,23 @@ import logging
 from neo4j import exceptions
 from elasticsearch import ElasticsearchException
 
-from app import NEO4J_DRIVER, ES_DRIVER, APP_CONFIG
+from app import NEO4J_DRIVER, APP_CONFIG
+from app.es import ElasticSearchDriver
 from app.exceptions import DatabaseError, DBNoResultFoundError
-
-
-GET_SIMILAR_MOVIES = """
-    MATCH (movie:Movie {external_id: $movie_external_id})
-        -[:ACTED_IN|WROTE|DIRECTED|PRODUCED|IN_GENRE|IN_COUNTRY]-(relationships)
-        -[:ACTED_IN|WROTE|DIRECTED|PRODUCED|IN_GENRE|IN_COUNTRY]-(recommendations)
-    WITH recommendations, collect(relationships) AS relationships
-    
-    RETURN recommendations.external_id as movie_external_id, REDUCE (
-        score = 0,
-        relationship IN relationships |
-        score + CASE
-                    WHEN 'Country' in labels(relationship) THEN 1
-                    WHEN 'Actor' in labels(relationship) THEN 1.5
-                    WHEN 'Writer' in labels(relationship) THEN 2
-                    WHEN 'Director' in labels(relationship) THEN 2
-                    WHEN 'ProductionCompany' in labels(relationship) THEN 2
-                    WHEN 'Genre' in labels(relationship) THEN 3
-                END
-    ) as score
-    ORDER BY score DESC
-    LIMIT $limit
-"""
-
-GET_CONTENT_BASED_RECOMMENDATIONS = """
-    CALL {
-        MATCH (user:User {external_id: $user_external_id})-[liked:LIKED]->(recent_liked:Movie)
-        RETURN user, recent_liked ORDER BY liked.timestamp DESC LIMIT 10
-    }
-    MATCH (recent_liked)
-        -[:ACTED_IN|WROTE|DIRECTED|PRODUCED|IN_GENRE|IN_COUNTRY]-(relationships)
-        -[:ACTED_IN|WROTE|DIRECTED|PRODUCED|IN_GENRE|IN_COUNTRY]-(recommendations)
-    WHERE NOT (user)-[:LIKED]->(recommendations)
-    WITH recommendations, collect(relationships) AS relationships
-    
-    RETURN recommendations.external_id as movie_external_id, REDUCE (
-        score = 0,
-        relationship IN relationships |
-        score + CASE
-                    WHEN 'Country' in labels(relationship) THEN 1
-                    WHEN 'Actor' in labels(relationship) THEN 1.5
-                    WHEN 'Writer' in labels(relationship) THEN 2
-                    WHEN 'Director' in labels(relationship) THEN 2
-                    WHEN 'ProductionCompany' in labels(relationship) THEN 2
-                    WHEN 'Genre' in labels(relationship) THEN 3
-                END
-    ) as score
-    ORDER BY score DESC
-    LIMIT $limit
-"""
-
-CREATE_LIKED_RELATIONSHIP = """
-    MATCH (movie:Movie {external_id: $movie_external_id})
-    WITH movie
-    MERGE (user:User {external_id: $user_external_id})
-    MERGE (user)-[liked:LIKED]->(movie)
-    ON CREATE SET liked.at = timestamp()
-    RETURN user.external_id as user_id,
-        liked.at as liked_timestamp,
-        movie.external_id as movie_id
-"""
-
-DELETE_LIKED_RELATIONSHIP = """
-    MATCH (user:User)-[liked:LIKED]->(movie:Movie)
-    WHERE user.external_id=$user_external_id AND movie.external_id=$movie_external_id
-    DELETE liked
-"""
-GET_COLLABORATIVE_RECOMMENDATIONS = """
-    CALL {
-        MATCH (user:User {external_id: $user_external_id})-[liked:LIKED]->(recent_liked:Movie)
-        RETURN user, recent_liked ORDER BY liked.timestamp DESC LIMIT 10
-    }
-    MATCH (recent_liked)<-[:LIKED]-(similar_user:User)-[:LIKED]->(recommended_movies:Movie)
-    WHERE NOT (user)-[:LIKED]->(recommended_movies)
-    WITH SIZE(COLLECT(DISTINCT similar_user)) as similar_user_count, recommended_movies
-    RETURN recommended_movies.external_id as movie_external_id
-    ORDER BY similar_user_count DESC
-    LIMIT $limit
-"""
-
+from app.utils.cypher_queries import (
+    GET_MOVIE,
+    GET_SIMILAR_MOVIES,
+    GET_CONTENT_BASED_RECOMMENDATIONS,
+    GET_COLLABORATIVE_RECOMMENDATIONS,
+    CREATE_LIKED_RELATIONSHIP,
+    DELETE_LIKED_RELATIONSHIP,
+)
+from app.constants import (
+    DESCRIPTION_FIELD,
+    TITLE_FIELD,
+    ORIGINAL_TITLE_FIELD,
+    EXTERNAL_ID_FIELD,
+)
 
 LOGGER = logging.getLogger(__name__)
 
@@ -94,13 +29,14 @@ LOGGER = logging.getLogger(__name__)
 class Movie:
     """This class includes functionality to work with Movies nodes."""
 
-    driver = NEO4J_DRIVER
+    neo4j_driver = NEO4J_DRIVER
+    es_driver = ElasticSearchDriver
 
     @classmethod
     def create_liked_relationship(cls, user_id, movie_id):
         """Create liked relationship between user and movie."""
         try:
-            with cls.driver.session() as session:
+            with cls.neo4j_driver.session() as session:
                 result = session.run(
                     CREATE_LIKED_RELATIONSHIP,
                     user_external_id=user_id,
@@ -122,7 +58,7 @@ class Movie:
     def delete_liked_relationship(cls, user_id, movie_id):
         """Delete liked relationship between user and movie."""
         try:
-            with cls.driver.session() as session:
+            with cls.neo4j_driver.session() as session:
                 session.run(
                     DELETE_LIKED_RELATIONSHIP,
                     user_external_id=user_id,
@@ -139,15 +75,12 @@ class Movie:
     def get_collaborative_recommendations(cls, user_id, limit):
         """Get movies recommendations based on collaborative filtering."""
         try:
-            with cls.driver.session() as session:
-                result = session.run(
+            with cls.neo4j_driver.session() as session:
+                return session.run(
                     GET_COLLABORATIVE_RECOMMENDATIONS,
                     user_external_id=user_id,
                     limit=limit
-                )
-                recommended_movies = result.data()
-                recommended_movies_ids = [movie["movie_external_id"] for movie in recommended_movies]
-                return recommended_movies_ids
+                ).data()
         except exceptions.Neo4jError as err:
             LOGGER.error(
                 "Failed to get collaborative recommendations for user=%s. Error: %s",
@@ -159,15 +92,12 @@ class Movie:
     def get_content_based_recommendations(cls, user_id, limit):
         """Get content-based movies recommendations."""
         try:
-            with cls.driver.session() as session:
-                result = session.run(
+            with cls.neo4j_driver.session() as session:
+                return session.run(
                     GET_CONTENT_BASED_RECOMMENDATIONS,
                     user_external_id=user_id,
                     limit=limit
-                )
-                recommended_movies = result.data()
-                recommended_movies_ids = [movie["movie_external_id"] for movie in recommended_movies]
-                return recommended_movies_ids
+                ).data()
         except exceptions.Neo4jError as err:
             LOGGER.error(
                 "Failed to get content-based recommendations for user=%s. Error: %s",
@@ -179,15 +109,12 @@ class Movie:
     def get_similar_movies(cls, movie_id, limit):
         """Get similar movies to provided movie external id."""
         try:
-            with cls.driver.session() as session:
-                result = session.run(
+            with cls.neo4j_driver.session() as session:
+                return session.run(
                     GET_SIMILAR_MOVIES,
                     movie_external_id=movie_id,
                     limit=limit
-                )
-                similar_movies = result.data()
-                similar_movies_ids = [movie["movie_external_id"] for movie in similar_movies]
-                return similar_movies_ids
+                ).data()
         except exceptions.Neo4jError as err:
             LOGGER.error(
                 "Failed to get similar movies for external_id=%s. Error: %s",
@@ -196,21 +123,37 @@ class Movie:
             raise DatabaseError("Failed to get similar movies")
 
     @classmethod
+    def get_movie(cls, movie_id):
+        """Return movie by provided movie external id."""
+        try:
+            with cls.neo4j_driver.session() as session:
+                movie = session.run(
+                    GET_MOVIE,
+                    movie_external_id=movie_id,
+                ).single().data()
+
+                return movie
+        except exceptions.Neo4jError as err:
+            LOGGER.error(
+                "Failed to get movie by external_id=%s. Error: %s",
+                movie_id, err
+            )
+            raise DatabaseError("Failed to get movie by external id")
+
+    @classmethod
     def search_movies(cls, query, limit):
         """Get movies from elastic search by provided query."""
-        query = {
-            "query": {
-                "multi_match": {
-                    "query": query,
-                    "fields": ("title", "description")
-                }
-            },
-            "_source": ["external_id", "original_title"]
-        }
-
         try:
-            result = ES_DRIVER.search(body=query, index=APP_CONFIG.ES_DATABASE_MOVIE_INDEX, size=limit)
-            movies = [movie["_source"] for movie in result["hits"]["hits"]]
+            query = cls.es_driver.format_multi_match_query(
+                query=query,
+                fields=(TITLE_FIELD, DESCRIPTION_FIELD),
+                projection=(EXTERNAL_ID_FIELD, ORIGINAL_TITLE_FIELD)
+            )
+            movies = cls.es_driver.search(
+                query=query,
+                index=APP_CONFIG.ES_DATABASE_MOVIE_INDEX,
+                limit=limit
+            )
         except ElasticsearchException as err:
             LOGGER.error(
                 "Failed to search movies by query=%s from es. Error: %s",

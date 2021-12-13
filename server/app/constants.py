@@ -16,3 +16,9 @@ TESTING_KEY = "testing"
 
 DATE_FORMAT = "%Y.%m.%d"
 DATETIME_FORMAT = "%Y.%m.%d %H:%M:%S"
+
+# Database fields
+EXTERNAL_ID_FIELD = "external_id"
+DESCRIPTION_FIELD = "description"
+ORIGINAL_TITLE_FIELD = "original_title"
+TITLE_FIELD = "title"
