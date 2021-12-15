@@ -149,7 +149,7 @@ class Movie:
                 return session.run(
                     GET_USER_LIKED_MOVIES,
                     user_external_id=user_id,
-                ).single().data()
+                ).data()
         except exceptions.Neo4jError as err:
             LOGGER.error(
                 "Failed to get liked movies for user=%s. Error: %s",

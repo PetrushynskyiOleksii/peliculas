@@ -21,8 +21,8 @@ GET_MOVIE = """
 """
 
 GET_USER_LIKED_MOVIES = """
-    MATCH (user:User {external_id: "user-5"})-[:LIKED]->(movie:Movie) 
-    RETURN user.external_id as external_id, COLLECT(movie{.external_id, .title}) as liked_movies
+    MATCH (:User {external_id: "user-5"})-[:LIKED]->(movie:Movie) 
+    RETURN movie.external_id as external_id, movie.title as title
 """
 
 GET_SIMILAR_MOVIES = """

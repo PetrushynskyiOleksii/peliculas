@@ -24,6 +24,38 @@ paths:
           schema:
             $ref: '#/definitions/SuccessResponse'
 
+  /user/movies:
+    get:
+      summary: Get user's liked movies
+      parameters:
+        - $ref: '#/parameters/Authorization'
+      responses:
+        200:
+          description: Movies were successfully retrieved
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                default: true
+              message:
+                type: string
+              data:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    external_id:
+                      type: string
+                    title:
+                      type: string
+        400:
+          $ref: '#/responses/BadRequest'
+        401:
+          $ref: '#/responses/Unauthorized'
+      tags:
+        - user
+
   /movies:
     get:
       summary: Search movie by provided query
