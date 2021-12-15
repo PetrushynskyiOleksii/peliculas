@@ -39,7 +39,7 @@ def handle_movies_search():
         return make_response(
             success=False,
             message="Required field query is not provided in the query params.",
-            http_status=HTTPStatus.NOT_FOUND
+            http_status=HTTPStatus.UNPROCESSABLE_ENTITY
         )
 
     try:

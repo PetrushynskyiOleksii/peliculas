@@ -86,9 +86,8 @@ CREATE_LIKED_RELATIONSHIP = """
     MERGE (user:User {external_id: $user_external_id})
     MERGE (user)-[liked:LIKED]->(movie)
     ON CREATE SET liked.at = timestamp()
-    RETURN user.external_id as user_id,
-        liked.at as liked_timestamp,
-        movie.external_id as movie_id
+    RETURN liked.at as liked_timestamp,
+        movie.external_id as external_id
 """
 
 DELETE_LIKED_RELATIONSHIP = """

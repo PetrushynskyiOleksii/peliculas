@@ -1,0 +1,328 @@
+swagger: "2.0"
+
+info:
+  version: "1.0.0"
+  title: Peliculas. Movie Engine
+  description: API server for Movie Engine
+
+host: https://peliculas-api-server.herokuapp.com
+basePath: /api/v1
+schemes: [http, https]
+
+consumes:
+  - application/json
+produces:
+  - application/json
+
+paths:
+  /health:
+    get:
+      summary: Check server health
+      responses:
+        200:
+          description: The server is up and ready to proccess requests
+          schema:
+            $ref: '#/definitions/SuccessResponse'
+
+  /movies:
+    get:
+      summary: Search movie by provided query
+      parameters:
+        - in: query
+          name: query
+          type: string
+          required: true
+      responses:
+        200:
+          description: Movies were successfully retrieved
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                default: true
+              message:
+                type: string
+              data:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    external_id:
+                      type: string
+                    original_title:
+                      type: string
+        400:
+          $ref: '#/responses/BadRequest'
+        422:
+          $ref: '#/responses/UnprocessableEntity'
+      tags:
+        - movies
+
+  /movies/{external_id}:
+    get:
+      summary: Retrieve movie and its relationships
+      parameters:
+        - in: path
+          name: external_id
+          type: string
+          required: true
+      responses:
+        200:
+          description: The movie data was successully retrived
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                default: true
+              message:
+                type: string
+              data:
+                type: object
+                properties:
+                  external_id:
+                    type: string
+                  title:
+                    type: string
+                  actors:
+                    $ref: '#/definitions/Item'
+                  countries:
+                    $ref: '#/definitions/Item'
+                  directors:
+                    $ref: '#/definitions/Item'
+                  genres:
+                    $ref: '#/definitions/Item'
+                  production_companies:
+                    $ref: '#/definitions/Item'
+                  writers:
+                    $ref: '#/definitions/Item'
+        400:
+          $ref: '#/responses/BadRequest'
+      tags:
+        - movies
+
+  /movies/{external_id}/similar:
+    get:
+      summary: Get similiar movies to provided movie external id
+      parameters:
+        - in: path
+          name: external_id
+          type: string
+          required: true
+      responses:
+        200:
+          description: Movies were successfully retrieved
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                default: true
+              message:
+                type: string
+              data:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    external_id:
+                      type: string
+                    title:
+                      type: string
+                    score:
+                      type: number
+                      format: double
+        400:
+          $ref: '#/responses/BadRequest'
+      tags:
+        - movies
+
+  /movies/{external_id}/like:
+    post:
+      summary: Create user`s like for provided movie external_id
+      parameters:
+        - in: path
+          name: external_id
+          type: string
+          required: true
+        - $ref: '#/parameters/Authorization'
+      responses:
+        200:
+          description: The like was successully created
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                default: true
+              message:
+                type: string
+              data:
+                type: object
+                properties:
+                  external_id:
+                    type: string
+                  liked_timestamp:
+                    type: integer
+        400:
+          $ref: '#/responses/BadRequest'
+        401:
+          $ref: '#/responses/Unauthorized'
+      tags:
+        - movies
+
+    delete:
+      summary: Delete user`s like for provided movie external_id
+      parameters:
+        - in: path
+          name: external_id
+          type: string
+          required: true
+        - $ref: '#/parameters/Authorization'
+      responses:
+        200:
+          description: The like was successully deleted
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                default: true
+              message:
+                type: string
+              data:
+                type: object
+        400:
+          $ref: '#/responses/BadRequest'
+        401:
+          $ref: '#/responses/Unauthorized'
+      tags:
+        - movies
+
+  /movies/recommendations/collaborative:
+    get:
+      summary: Get movies collaborative recommendations
+      parameters:
+        - $ref: '#/parameters/Authorization'
+      responses:
+        200:
+          description: Movies were successfully retrieved
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                default: true
+              message:
+                type: string
+              data:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    external_id:
+                      type: string
+                    title:
+                      type: string
+                    score:
+                      type: number
+                      format: double
+        400:
+          $ref: '#/responses/BadRequest'
+        401:
+          $ref: '#/responses/Unauthorized'
+      tags:
+        - movies-recommendations
+
+  /movies/recommendations/content-based:
+    get:
+      summary: Get movies content-based recommendations
+      parameters:
+        - $ref: '#/parameters/Authorization'
+      responses:
+        200:
+          description: Movies were successfully retrieved
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                default: true
+              message:
+                type: string
+              data:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    external_id:
+                      type: string
+                    title:
+                      type: string
+                    score:
+                      type: number
+                      format: double
+        400:
+          $ref: '#/responses/BadRequest'
+        401:
+          $ref: '#/responses/Unauthorized'
+      tags:
+        - movies-recommendations
+
+definitions:
+  ErrorResponse:
+    type: object
+    properties:
+      success:
+        type: boolean
+        default: false
+      message:
+        type: string
+      data:
+        type: object
+  SuccessResponse:
+    type: object
+    properties:
+      success:
+        type: boolean
+        default: true
+      message:
+        type: string
+      data:
+        type: object
+  Item:
+    type: object
+    properties:
+      name:
+        type: string
+
+
+parameters:
+  Authorization:
+    in: header
+    name: Authorization
+    required: true
+    type: string
+    description: Authorization access token
+    pattern: '^Bearer .*'
+    example: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpYXQiOjE2MzQ3NTIwMT
+
+
+responses:
+  BadRequest:
+    description: Bad request was received
+    schema:
+      $ref: '#/definitions/ErrorResponse'
+  Unauthorized:
+    description: The access token was missed or incorrect
+    schema:
+      $ref: '#/definitions/ErrorResponse'
+  Forbidden:
+    description: Wrong permissions for current user
+    schema:
+      $ref: '#/definitions/ErrorResponse'
+  UnprocessableEntity:
+    description: Required fields were not provided
+    schema:
+      $ref: '#/definitions/ErrorResponse'

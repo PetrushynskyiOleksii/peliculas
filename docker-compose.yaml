@@ -13,6 +13,8 @@ services:
       - 9200:9200
       - 9300:9300
     restart: always
+    volumes:
+      - es-data:/usr/share/elasticsearch/data
 
   neo4j:
     container_name: peliculas__neo4j
@@ -70,3 +72,4 @@ services:
 volumes:
   neo4j-data:
   neo4j-plugins:
+  es-data:
