@@ -21,7 +21,7 @@ def auth_required(view):
             return make_response(
                 success=False,
                 message="You aren't authorized. Please provide authorization token.",
-                http_status=HTTPStatus.UNAUTHORIZED
+                http_status=HTTPStatus.UNAUTHORIZED,
             )
 
         token = token.split("Bearer ")[-1]
@@ -31,7 +31,7 @@ def auth_required(view):
             return make_response(
                 success=False,
                 message=f"Wrong credentials. {str(err)}",
-                http_status=HTTPStatus.UNAUTHORIZED
+                http_status=HTTPStatus.UNAUTHORIZED,
             )
 
         g.user_id = payload["user_id"]

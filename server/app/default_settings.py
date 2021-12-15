@@ -5,6 +5,7 @@ import os
 
 class BaseConfig:
     """Base configuration includes shared variables."""
+
     SERVER_HOST = os.getenv("SERVER_HOST", "localhost")
     SERVER_PORT = os.getenv("SERVER_PORT", 5555)
 
@@ -31,6 +32,7 @@ class BaseConfig:
 
 class ProductionConfig(BaseConfig):
     """Production config includes variables for prod env."""
+
     # Neo4j
     NEO4j_DATABASE_SIZE = 100
 
@@ -40,6 +42,7 @@ class ProductionConfig(BaseConfig):
 
 class StagingConfig(BaseConfig):
     """Staging config includes variables for staging env."""
+
     # Neo4j
     NEO4j_DATABASE_SIZE = 25
 
@@ -49,6 +52,7 @@ class StagingConfig(BaseConfig):
 
 class DevelopmentConfig(BaseConfig):
     """Develop config includes variables for develop env."""
+
     # Neo4j
     NEO4j_DATABASE_SIZE = 5
 
@@ -58,6 +62,7 @@ class DevelopmentConfig(BaseConfig):
 
 class TestingConfig(BaseConfig):
     """Testing config includes variables for testing env."""
+
     # Neo4j
     NEO4j_DATABASE_SIZE = 1
 

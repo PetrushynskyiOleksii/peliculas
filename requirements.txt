@@ -14,3 +14,4 @@ pyjwt==2.3.0
 flask-cors==3.0.10
 flask-swagger-ui==3.36.0
 elasticsearch==7.15.2
+black==21.12b0

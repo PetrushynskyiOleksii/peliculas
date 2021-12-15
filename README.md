@@ -1,4 +1,5 @@
 # Películas. Movie Recommendation Engine
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
 # Description
 API documentation: http://peliculas.herokuapp.com/v1/api/docs

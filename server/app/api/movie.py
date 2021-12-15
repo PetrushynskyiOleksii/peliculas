@@ -13,7 +13,7 @@ from app.utils.response import make_response
 movies_blueprint = Blueprint("pl-movies", __name__)
 
 
-@movies_blueprint.route("user/movies", methods=("GET", ))
+@movies_blueprint.route("user/movies", methods=("GET",))
 @auth_required
 def handle_user_liked_movies():
     """Return movies liked by user."""
@@ -29,7 +29,7 @@ def handle_user_liked_movies():
     return make_response(success=True, data=liked_movies, http_status=HTTPStatus.OK)
 
 
-@movies_blueprint.route("/movies", methods=("GET", ))
+@movies_blueprint.route("/movies", methods=("GET",))
 def handle_movies_search():
     """Return results from elastic search by provided query."""
     limit = request.args.get("limit", type=int, default=10)
@@ -39,7 +39,7 @@ def handle_movies_search():
         return make_response(
             success=False,
             message="Required field query is not provided in the query params.",
-            http_status=HTTPStatus.UNPROCESSABLE_ENTITY
+            http_status=HTTPStatus.UNPROCESSABLE_ENTITY,
         )
 
     try:
@@ -54,7 +54,7 @@ def handle_movies_search():
     return make_response(success=True, data=movies, http_status=HTTPStatus.OK)
 
 
-@movies_blueprint.route("/movies/<movie_id>", methods=("GET", ))
+@movies_blueprint.route("/movies/<movie_id>", methods=("GET",))
 def handle_get_movie(movie_id):
     """Return movie data by provided movie external id."""
     try:
@@ -69,7 +69,7 @@ def handle_get_movie(movie_id):
     return make_response(success=True, data=movie, http_status=HTTPStatus.OK)
 
 
-@movies_blueprint.route("/movies/<movie_id>/like",  methods=("POST", ))
+@movies_blueprint.route("/movies/<movie_id>/like", methods=("POST",))
 @auth_required
 def handle_movie_like(movie_id):
     """Create like for provided movie and user."""
@@ -85,7 +85,7 @@ def handle_movie_like(movie_id):
     return make_response(success=True, data=result, http_status=HTTPStatus.CREATED)
 
 
-@movies_blueprint.route("/movies/<movie_id>/like", methods=("DELETE", ))
+@movies_blueprint.route("/movies/<movie_id>/like", methods=("DELETE",))
 @auth_required
 def handle_movie_dislike(movie_id):
     """Delete like for provided movie and user."""
@@ -101,7 +101,7 @@ def handle_movie_dislike(movie_id):
     return make_response(success=True, http_status=HTTPStatus.NO_CONTENT)
 
 
-@movies_blueprint.route("/movies/<movie_id>/similar", methods=("GET", ))
+@movies_blueprint.route("/movies/<movie_id>/similar", methods=("GET",))
 def handle_movie_similar(movie_id):
     """Return list of similar movies to provided movie_id."""
     limit = request.args.get("limit", type=int, default=10)
@@ -118,7 +118,7 @@ def handle_movie_similar(movie_id):
     return make_response(success=True, data=movies, http_status=HTTPStatus.OK)
 
 
-@movies_blueprint.route("movies/recommendations/collaborative", methods=("GET", ))
+@movies_blueprint.route("movies/recommendations/collaborative", methods=("GET",))
 @auth_required
 def handle_collaborative_recommendations():
     """Return collaborative recommendations for provided user."""
@@ -136,7 +136,7 @@ def handle_collaborative_recommendations():
     return make_response(success=True, data=movies, http_status=HTTPStatus.OK)
 
 
-@movies_blueprint.route("/movies/recommendations/content-based", methods=("GET", ))
+@movies_blueprint.route("/movies/recommendations/content-based", methods=("GET",))
 @auth_required
 def handle_content_based_recommendations():
     """Return content-based recommendations for provided user."""

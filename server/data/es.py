@@ -48,11 +48,11 @@ def es_create_movie_index():
             "properties": {
                 "title": {"type": "text"},
                 "description": {"type": "text", "analyzer": "description_analyzer"},
-                "stuff": {"type": "text"}
+                "stuff": {"type": "text"},
             }
-        }
+        },
     }
-    ES_DRIVER.indices.create(index='movie_index', ignore=400, body=index_configs)
+    ES_DRIVER.indices.create(index="movie_index", ignore=400, body=index_configs)
 
 
 def es_create_stuff_index():
@@ -77,7 +77,7 @@ def es_create_stuff_index():
                 "original_title": {"type": "keyword"},
                 "description": {"type": "text", "analyzer": "description_analyzer"},
             }
-        }
+        },
     }
     ES_DRIVER.indices.create(index=MOVIE_INDEX_NAME, ignore=400, body=index_configs)
 
@@ -126,7 +126,7 @@ def es_insert_movies():
         bulk(ES_DRIVER, es_docs, index=MOVIE_INDEX_NAME)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     try:
         es_create_movie_index()
         es_insert_movies()

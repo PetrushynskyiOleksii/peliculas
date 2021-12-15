@@ -41,7 +41,7 @@ class Movie:
                 result = session.run(
                     CREATE_LIKED_RELATIONSHIP,
                     user_external_id=user_id,
-                    movie_external_id=movie_id
+                    movie_external_id=movie_id,
                 ).data()
         except exceptions.Neo4jError as err:
             LOGGER.error(
@@ -63,7 +63,7 @@ class Movie:
                 session.run(
                     DELETE_LIKED_RELATIONSHIP,
                     user_external_id=user_id,
-                    movie_external_id=movie_id
+                    movie_external_id=movie_id,
                 )
         except exceptions.Neo4jError as err:
             LOGGER.error(
@@ -80,7 +80,7 @@ class Movie:
                 return session.run(
                     GET_COLLABORATIVE_RECOMMENDATIONS,
                     user_external_id=user_id,
-                    limit=limit
+                    limit=limit,
                 ).data()
         except exceptions.Neo4jError as err:
             LOGGER.error(
@@ -97,7 +97,7 @@ class Movie:
                 return session.run(
                     GET_CONTENT_BASED_RECOMMENDATIONS,
                     user_external_id=user_id,
-                    limit=limit
+                    limit=limit,
                 ).data()
         except exceptions.Neo4jError as err:
             LOGGER.error(
@@ -164,7 +164,7 @@ class Movie:
             query = cls.es_driver.format_multi_match_query(
                 query=query,
                 fields=(TITLE_FIELD, DESCRIPTION_FIELD),
-                projection=(EXTERNAL_ID_FIELD, ORIGINAL_TITLE_FIELD)
+                projection=(EXTERNAL_ID_FIELD, ORIGINAL_TITLE_FIELD),
             )
             movies = cls.es_driver.search(
                 query=query,

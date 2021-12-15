@@ -39,6 +39,6 @@ def create_app():
     return app
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     server = create_app()
     server.run(host=APP_CONFIG.SERVER_HOST, port=APP_CONFIG.SERVER_PORT)
